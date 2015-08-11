@@ -1,6 +1,7 @@
 ---
-title: Real World Cloud Computing with Haskell
+title:  Scalable and Reliable Video Transcoding in Haskell
 author: Alfredo Di Napoli
+date:   Haskell Exchange 2015
 ---
 
 # Quoting Steve Jobs..
@@ -39,6 +40,9 @@ Today, I'm gonna tell you three stories.
  - The final one will be about you, but we'll get to that.
 }
 
+# Hermes' evolution
+
+* https://github.com/iconnect/hermes/tree/74aeab22be600053dd8412776be86979f32ec0f2
 
 ------------------
 
