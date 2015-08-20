@@ -4,14 +4,13 @@ author: Alfredo Di Napoli
 date:   Haskell Exchange 2015
 ---
 
-# Quoting Steve Jobs..
+# About me
 
 \note{
-  Hello everyone, and thanks for coming. We have
-  a pretty thight schedule, but I'm trying to leave
-  15 mins for Q&A. If you have question during the
-  talk though, do not hesitate to interrupt me, as
-  we'll take time from the final Q&A section.
+Here I show three pictures:
+- The missile (with the caption launchMissile :: IO ()
+- The Manchester mill
+- The Brighton sea
 }
 
 
@@ -21,24 +20,24 @@ Today, I'm gonna tell you three stories.
 
 \centerline{\includegraphics[scale=0.4]{images/steve.jpg}}
 
-1. My story
-2. My company story
-3. Your story
+------------------
 
-\note{
- So, quoting Steve Jobs, today I'm gonna tell you three
- stories:
- - My story, or how I went to be an hobbyst to a
- professionally employed Haskell programmer in
- less than 2 years, sharing my experience on
- what worked (and what not).
- - The story of Iris Connect, the company I work for,
- telling you why we choose Haskell, the pro (and snags)
- of using it in production and overall show that it's a
- pragmatic programming language which can be used
- to solve real-world problems
- - The final one will be about you, but we'll get to that.
+# IRIS Connect
+
+\note {
+Talk about the company. What we do. Include Athena screenshot.
 }
+
+------------------
+
+# IRIS' Greek Zoo
+
+\note {
+Here I show a nice diagram of all the systems and how they
+interact with each other.
+}
+
+------------------
 
 # Hermes' evolution
 
