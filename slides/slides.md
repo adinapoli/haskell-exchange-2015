@@ -27,6 +27,13 @@ Full story at: \textbf{http://goo.gl/qkKwKm}
 Talk about the company. What we do. Include Athena screenshot.
 }
 
+
+\centerline{\includegraphics[scale=0.4]{images/iris_logo.png}}
+
+------------------
+
+# IRIS Connect (contd.)
+
 ------------------
 
 # IRIS' Greek Zoo
@@ -63,13 +70,17 @@ Here I discuss the media key abstraction, aka an IP address for a video resource
 
 # The Elephant in the room
 
-There is an elephant in the room. Can you spot it?
+\begin{center}
+\textbf{What's the elephant in the room?}
+\end{center}
 
-<Nice pic of an elephant>
+\centerline{\includegraphics[scale=0.6]{images/elephant.jpg}}
 
 ------------------
 
-Why not use Cloud Haskell?
+\begin{center}
+\textbf{\huge{Why not use Cloud Haskell?}}
+\end{center}
 
 \note {
 Discuss why we do have not used CH.
