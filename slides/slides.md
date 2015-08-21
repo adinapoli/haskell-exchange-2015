@@ -13,12 +13,11 @@ Here I show three pictures:
 - The Brighton sea
 }
 
+\begin{center}
+Full story at: \textbf{http://goo.gl/qkKwKm}
+\end{center}
 
-Today, I'm gonna tell you three stories.
-
-&nbsp;
-
-\centerline{\includegraphics[scale=0.4]{images/steve.jpg}}
+\centerline{\includegraphics[scale=0.4]{images/about.png}}
 
 ------------------
 
@@ -41,67 +40,39 @@ interact with each other.
 
 # Hermes' evolution
 
+- October, 2013
+    * <Put cloc data here>
+- October, 2015
+    * <Put cloc data here>
+
 * https://github.com/iconnect/hermes/tree/74aeab22be600053dd8412776be86979f32ec0f2
 
 ------------------
 
-# Mid 2012
+# Hermes' challenges
 
-&nbsp;
+------------------
 
-\centerline{\includegraphics[scale=0.3]{images/meteor.jpg}}
-
-&nbsp;
-
-I started an internship with a company in the defense field, doing C++
-in Rome. To hone my Haskell skills I tried to contribute to an Haskell
-open source project, the [Snap](http://www.snapframework.com)
-framework.
+# Abstraction is the (media key)
 
 \note{
-I knew that to get really proficient with a language there is no
-better training ground that an open source project. I was lucky
-enough to be mentored by Doug Beardsley, one of Snap's lead
-engineers.
+Here I discuss the media key abstraction, aka an IP address for a video resource.
 }
 
 ------------------
 
-# Mid 2012 (contd.)
+# The Elephant in the room
 
-Being determined in earning a living with functional programming, I decided to
-concentrate my efforts only on three languages, based on different criteria
-(commercial users, personal preference, job offers abroad):
+There is an elephant in the room. Can you spot it?
 
-- Haskell
-- OCaml
-- Scala
-
-\note {
-And it was the last one, Scala, my kickstart to the FP job industry.
-I sent the CV to a UK company in Manchester called Cake Solutions,
-and after the usual interview dance I was on-board! So I resigned
-from my internship, bought a one-way ticket to Manchester 2 weeks
-from there, and prepared for the biggest leap into the dark of
-my entire life.
-}
+<Nice pic of an elephant>
 
 ------------------
 
-# The Manchester era
-
-\centerline{\includegraphics[scale=0.07]{images/cake_mill.jpg}}
-
-\center {
-  \textit{
-    Scala programmer during the day, Haskell coder at night.
-  }
-}
+Why not use Cloud Haskell?
 
 \note {
-When in Manchester, I was writing Scala for living but kept
-spending my gloomy Mancunians evenings writing Haskell, the
-language I wanted to use.
+Discuss why we do have not used CH.
 }
 
 ------------------
