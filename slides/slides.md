@@ -24,15 +24,23 @@ Full story at: \textbf{http://goo.gl/qkKwKm}
 # IRIS Connect
 
 \note {
-Talk about the company. What we do. Include Athena screenshot.
+Talk about the company. What we do. Include Company logo.
 }
 
 
-\centerline{\includegraphics[scale=0.4]{images/iris_logo.png}}
+\centerline{\includegraphics[scale=0.2]{images/iris_logo.png}}
+
+- Market leader for CPD solutions
+
+- Used by more than 1000 schools across UK, Europe, US & Australia
 
 ------------------
 
 # IRIS Connect (contd.)
+
+\note {
+Include Athena screenshot
+}
 
 ------------------
 
@@ -43,16 +51,18 @@ Here I show a nice diagram of all the systems and how they
 interact with each other.
 }
 
+\vspace{1em}
+\centerline{\includegraphics[scale=0.4]{images/greek_zoo.png}}
+
 ------------------
 
 # Hermes' evolution
 
-- October, 2013
-    * <Put cloc data here>
-- October, 2015
-    * <Put cloc data here>
+\textbf{October, 2013}
+\centerline{\includegraphics[scale=0.3]{images/hermes_before.png}}
 
-* https://github.com/iconnect/hermes/tree/74aeab22be600053dd8412776be86979f32ec0f2
+\textbf{October, 2015}
+\centerline{\includegraphics[scale=0.3]{images/hermes_after.png}}
 
 ------------------
 
