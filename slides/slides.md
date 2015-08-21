@@ -47,8 +47,12 @@ Include Athena screenshot
 # IRIS' Greek Zoo
 
 \note {
-Here I show a nice diagram of all the systems and how they
-interact with each other.
+In this quite barebone diagram you can see at glance the components
+of our system. At IRIS we have this recurring theme of greek gods &
+titans, so we maintained the tradition upon creating more services.
+We operate using AWS and its services, most notably EC2 & S3.
+In the latter we store all our videos & customer data.
+Today I will be telling you the story of Hermes.
 }
 
 \vspace{1em}
@@ -79,15 +83,40 @@ according to demand.
 
 More specifically, we wanted a system with these desirable properties:
 
-* Scalable
+* ~ Scalable
 
-* Fault tolerant
+* ~ Fault tolerant
 
-* Distributed
+* ~ Distributed
+
+------------------
+
+# "Out of the tar pit" docet
+
+\begin{center}
+The classical ways to approach the difficulty of state include OOP
+programming which tightly couples state together with related behaviour,
+and functional programming which — in its pure form — eschews
+state and side-effects all together. [..]
+We argue that it is possible to take useful ideas from both and that
+this approach offers significant potential for simplifying the construction of
+large-scale software systems.
+\end{center}
+
+In the same fashion, we have 2 different worlds colliding:
+
+* ~ We need to transcode videos, which is a very stateful operation
+* ~ As good Haskell programmers, we want to have components in our system to
+be as stateless as possible.
 
 ------------------
 
 # A shared nothing architecture (SN)
+
+\note{
+Transcoded into Distributed jargon, what we want is a Shared Nothing Architecture.
+This is a possible definition, as taking from Wikipedia. 
+}
 
 \begin{center}
 \textit{A shared nothing architecture (SN) is a distributed computing architecture in which each node
@@ -96,7 +125,10 @@ is independent and self-sufficient, and there is no single point of contention a
 
 ------------------
 
-All problems in computer science can be solved by another level of indirection," is a famous quote attributed to Butler Lampson
+\begin{center}
+\textit{"All problems in computer science can be solved by another level of indirection."}
+  - Butler Lampson
+\end{center}
 
 ------------------
 
@@ -118,8 +150,65 @@ binary blobs over the queues. Can we avoid that?
 Here I discuss the media key abstraction, aka an IP address for a video resource.
 }
 
+``` Bash
+root__m-stg-main-2014_10_29_13_27_26-videos-1-2333-vid-smc-oxz8dmdi1lx7fong
+    ^    ^   ^        ^                 ^   ^   ^   ^   ^        ^
+    |    |   |        |                 |   |   |   |   |        |
+comment  |   |        |                 |   |   |   |   |        |
+         |   |        |                 |   |   |   |   |        |
+host ----+   |        |                 |   |   |   |   |        |
+             |        |                 |   |   |   |   |        |
+database --- +        |                 |   |   |   |   |        |
+                      |                 |   |   |   |   |        |
+dataset version ------+                 |   |   |   |   |        |
+                                        |   |   |   |   |        |
+resource (video or image) --------------+   |   |   |   |        |
+                                            |   |   |   |        |
+user ID ------------------------------------+   |   |   |        |
+                                                |   |   |        |
+video ID -------------------------------------- +   |   |        |
+                                                    |   |        |
+channel type ---------------------------------------+   |        |
+                                                        |        |
+video products -----------------------------------------+        |
+                                                                 |
+MAC (avoids submission of bogus keys) ---------------------------+
+```
+
 To be fair, the media key abstraction was already present in Atlas when I choose
 RabbitMQ, but it was the perfect fit for it!
+
+
+------------------
+
+# What about scalability?
+
+Fine, but RabbitMQ doesn't give you scalability...
+
+1. We stood on the shoulder of giants - namely AWS' Auto Scaling Groups
+2. Our very first native scaling algorith looked like:
+    + ~ Scaling up: Based on CPU% over time
+    + ~ Scaling down: Based on CPU% over time
+
+It kept us going for a while...
+
+------------------
+
+# The architecture
+
+\centerline{\includegraphics[scale=0.18]{images/hermes_architecture.png}}
+
+------------------
+
+# Reviewing the scaling experience
+
+1. Scaling up was too conservative and slow
+    + ~ It could take up to 15 mins to spawn a new worker
+2. Scaling down suffered similar problems
+3. The result was unoptimal customer experience (due to the
+slow turnaround time) and unoptimal for us (due to the additional
+costs incurring from poor scaling down)
+
 
 ------------------
 
@@ -154,79 +243,6 @@ new machines born and die frequently
 3. It wasn't mature enough in 2013, if not for a handful of companies
 using it
 
-
-------------------
-
-&nbsp;
-
-\centerline{\includegraphics[scale=0.5]{images/smatters.png}}
-
-&nbsp;
-
-\centerline{\includegraphics[scale=0.5]{images/wt.png}}
-
-\note {
-Talk about the fact I met people from Well Typed, together with
-Andres Loh, which later would remember me.
-}
-
-------------------
-
-* After a couple of months (it was July 2013) Well Typed was
-  hiring. I decided to take pot luck and I applied.
-* To maximise my chances, I applied to a couple of other
-  positions for Haskell jobs.
-* Despite the rejections, **I was actually able to face an
-  entire interview doing nothing but Haskell!**
-
-\note {
-Say this was an important turning point, where I switched from
-an hobbyst to a professional applying for a job.
-}
-
-------------------
-
-# August 2013, Vieste - Italy
-
-\centerline{\includegraphics[scale=0.2]{images/vieste.jpg}}
-
-\center {
-Got rejected by WT, but they said "A client of us might be
-searching soon..."
-}
-
-------------------
-
-# Landing the tech job I loved
-
-\centerline{\includegraphics[scale=0.06]{images/interview.jpg}}
-
-On the 29th of August, I applied for a Haskell job @ Iris Connect.
-Took a train to Brigthon, did the interview and was offered
-the position. **I was officially an Haskeller!**
-
-------------------
-
-# Takehome lessons
-
-
-1. Don't be afraid to take leaps into the dark
-2. Life is about opportunities, seize them
-3. Try to contribute to a "famous" Haskell OSS
-4. Constantly "sharpen your saw"
-5. Be receptive, do networking
-
-\note{
-Don't be afraid to take leaps into the dark: I turned down a job offer in the safe harbor of my home city for something totally new and scary. If I didn’t do that, today I probably wouldn’t be an Haskell programmer.
-
-Life is about opportunities, seize them: Think about what would have happened if I was too shy to ask Cake Solutions about Skills Matter's courses. They would have never payed for the course, I would have never met Andres and probably never applied to WT. Duncan would have probably not even considered referring me to Iris.
-
-Try to contribute to a "famous" Haskell OSS: I was able to land this job also because I had experience with web dev in Haskell. But I had experience mostly because I contributed to Snap. There is a substantial difference to say "I have used Snap", as opposed as "I used Snap and I have implemented feature X".
-
-Constantly sharpen your saw: If I felt "realised", today I would still be working in Manchester. The burning desire I had to work as a professional Haskell dev caused me to spend my spare time programming and studying.
-
-Be receptive, do networking: Having a strong network is vital. Try to actively contribute to the community, let other Haskeller know you. Let them think "I have already heard about John Doe". Even if just an handfull will do, you won't be a total stranger but someone into the community. I think this is the best thing which can happen to an Haskeller.
-}
 
 ------------------
 
