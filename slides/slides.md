@@ -68,6 +68,48 @@ interact with each other.
 
 # Hermes' challenges
 
+Upon taking the lead on Hermes, I was asked for a couple of
+requirements to be fullfilled, the most important one being that
+the system needed to be deployed in a cluster, capable of scaling
+according to demand.
+
+------------------
+
+# Hermes' challenges
+
+More specifically, we wanted a system with these desirable properties:
+
+* Scalable
+
+* Fault tolerant
+
+* Distributed
+
+------------------
+
+# A shared nothing architecture (SN)
+
+\begin{center}
+\textit{A shared nothing architecture (SN) is a distributed computing architecture in which each node
+is independent and self-sufficient, and there is no single point of contention across the system.}
+\end{center}
+
+------------------
+
+All problems in computer science can be solved by another level of indirection," is a famous quote attributed to Butler Lampson
+
+------------------
+
+# RabbitMQ
+
+1. RabbitMQ was just the right tool for the job at hand:
+    + ~ Easy to setup
+    + ~ Can be configured to operate in a federation of nodes
+    + ~ Extremely reliable
+    + ~ Good Haskell bindings for it (\textit{AMQP})
+2. A question genuinely arise: it seems extremely costly to shuffle video as
+binary blobs over the queues. Can we avoid that?
+
 ------------------
 
 # Abstraction is the (media key)
@@ -75,6 +117,9 @@ interact with each other.
 \note{
 Here I discuss the media key abstraction, aka an IP address for a video resource.
 }
+
+To be fair, the media key abstraction was already present in Atlas when I choose
+RabbitMQ, but it was the perfect fit for it!
 
 ------------------
 
@@ -95,6 +140,20 @@ Here I discuss the media key abstraction, aka an IP address for a video resource
 \note {
 Discuss why we do have not used CH.
 }
+
+------------------
+
+# Why not Cloud Haskell
+
+1. CH encourages Erlang-style (i.e. actor based) communication, so nodes
+should know each other
+ - We do not want that!
+2. Peer discovery would have been tricky in a dynamic environment where
+new machines born and die frequently
+
+3. It wasn't mature enough in 2013, if not for a handful of companies
+using it
+
 
 ------------------
 
