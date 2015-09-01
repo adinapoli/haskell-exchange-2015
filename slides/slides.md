@@ -30,9 +30,10 @@ Talk about the company. What we do. Include Company logo.
 
 \centerline{\includegraphics[scale=0.2]{images/iris_logo.png}}
 
-- Market leader for CPD solutions
+- ~ Present in over 1800 schools Worldwide
+  (mostly UK, Europe, US & Australia)
 
-- Used by more than 1000 schools across UK, Europe, US & Australia
+- ~ Used by over 32000 teachers
 
 ------------------
 
@@ -41,6 +42,8 @@ Talk about the company. What we do. Include Company logo.
 \note {
 Include Athena screenshot
 }
+
+\centerline{\includegraphics[scale=0.18]{images/athena.png}}
 
 ------------------
 
