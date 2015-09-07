@@ -24,7 +24,9 @@ Full story at: \textbf{http://goo.gl/qkKwKm}
 # IRIS Connect
 
 \note {
-Talk about the company. What we do. Include Company logo.
+Talk about the company. What we do. Mention the word
+"Reflections" (use stats by Chris), which will serve as
+a link to the next slide.
 }
 
 
@@ -40,7 +42,10 @@ Talk about the company. What we do. Include Company logo.
 # IRIS Connect (contd.)
 
 \note {
-Include Athena screenshot
+I have mentioned the word reflection, and not by chance. A
+reflection is a single feedback unit which can be formed by
+one of more videos, which are uploaded by the teachers and
+that other teachers (when invited) can watch and comment on.
 }
 
 \centerline{\includegraphics[scale=0.18]{images/athena.png}}
@@ -94,23 +99,16 @@ More specifically, we wanted a system with these desirable properties:
 
 ------------------
 
-# "Out of the tar pit" docet
+# All I want is a cluster
 
-\begin{center}
-The classical ways to approach the difficulty of state include OOP
-programming which tightly couples state together with related behaviour,
-and functional programming which — in its pure form — eschews
-state and side-effects all together. [..]
-We argue that it is possible to take useful ideas from both and that
-this approach offers significant potential for simplifying the construction of
-large-scale software systems.
-\end{center}
-
-In the same fashion, we have 2 different worlds colliding:
-
+* ~ It's easy to see that what we want is a **cluster**, capable of scaling on
+  demand
 * ~ We need to transcode videos, which is a very stateful operation
-* ~ As good Haskell programmers, we want to have components in our system to
-be as stateless as possible.
+* ~ A cluster typically implies machines talking to each other, which is
+  also very stateful
+* ~ **As good Haskell programmers**, we want to have components in our system to
+  be **as stateless as possible**, and potentially treat videos as **persistent
+  data structures**!
 
 ------------------
 
@@ -181,6 +179,23 @@ MAC (avoids submission of bogus keys) ---------------------------+
 To be fair, the media key abstraction was already present in Atlas when I choose
 RabbitMQ, but it was the perfect fit for it!
 
+------------------
+
+# What about data storage?
+
+Fine, but RabbitMQ doesn't give you data persistence...
+
+1. We use AWS' S3 for our storing needs
+   + ~ A media key **uniquely identifies** an S3 location (it's like
+   an **IP address for videos**!)
+2. Upon upload the original file from the user is synced over S3 and
+   we call this generation-0 file the **master file**
+3. Such master file is **immutable**, and each product we transcode
+   generates a brand new binary on S3
+
+\center{\textbf{
+We are treating videos as immutable data structures!
+}}
 
 ------------------
 
@@ -188,7 +203,7 @@ RabbitMQ, but it was the perfect fit for it!
 
 Fine, but RabbitMQ doesn't give you scalability...
 
-1. We stood on the shoulder of giants - namely AWS' Auto Scaling Groups
+1. We stood once again on the shoulder of giants - namely AWS' Auto Scaling Groups
 2. Our very first native scaling algorith looked like:
     + ~ Scaling up: Based on CPU% over time
     + ~ Scaling down: Based on CPU% over time
