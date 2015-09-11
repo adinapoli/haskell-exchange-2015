@@ -116,7 +116,7 @@ More specifically, we wanted a system with these desirable properties:
 
 \note{
 Transcoded into Distributed jargon, what we want is a Shared Nothing Architecture.
-This is a possible definition, as taking from Wikipedia. 
+This is a possible definition, as taken from Wikipedia.
 }
 
 \begin{center}
@@ -199,6 +199,16 @@ We are treating videos as immutable data structures!
 
 ------------------
 
+# The importance of being immutable
+
+\center{
+Easy concurrency and parallelism!
+}
+
+\centerline{\includegraphics[scale=0.36]{images/video_products.png}}
+
+------------------
+
 # What about scalability?
 
 Fine, but RabbitMQ doesn't give you scalability...
@@ -229,7 +239,176 @@ costs incurring from poor scaling down)
 
 ------------------
 
-\centerline{\includegraphics[scale=0.14]{images/pan_cost_june.png}}
+# Scaling up, revisited
+
+* •Scaling up is easy: all we care about is the total number of
+    jobs in RabbitMQ's **Ready** state;
+    + ~ In RMQ jargon those are jobs waiting for a "transcoding slot"
+* •We periodically monitor those figures and kick off a "ScaleUP" action
+    whenever `ready_jobs >= 0`
+    + ~ AWS's ASG allows us to put an upper bound to the total number of
+      spawnable machines, to keep costs at bay.
+
+------------------
+
+# Scaling down
+
+* •More interesting is the scaling down. Ideally we want to kill a
+    worker if the following is true:
+    + ~ That worker didn't receive any new job for a `starvation_time` (say, 5 minutes)
+* •At the same time, we would like to opttimise the time the machines stays arounnd
+* •Last but not least, it needs to commit suicide alone, taking a
+    local decision, as it doesn't know its peers (SN architecture - remember?)
+
+------------------
+
+# Scaling down - The Reaper
+
+``` haskell
+type HeartBeat = TBQueue ()
+type Toggle = TMVar ()
+type PoisonFlask = TMVar ()
+
+data Reaper = Reaper {
+    _rr_timeout :: !(Maybe Int)
+  -- ^ The timeout to use for this `Reaper`. Setting this to
+  -- Nothing means no timeout at all. This is useful for those transcoders
+  -- not associated with jobs (e.g. dual-view, discovery-kit, notifications,..)
+  , _rr_reapCondition :: IO Bool
+  -- ^ If True, will trigger the reaping. If False, the Reaper will be
+  -- permissive.
+  , _rr_reapAction :: IO ()
+  , _rr_heartbeat :: !HeartBeat
+  , _rr_toggle :: !Toggle
+  -- ^ When filled, inform the listeners they can carry on with their
+  -- activities (i.e. fetch another job from the queue)
+  , _rr_poisonFlask :: !PoisonFlask
+  }
+```
+
+------------------
+
+# Scaling down - Reaper timeout
+
+```
+data ReaperPoisoned = ReaperPoisoned ()
+type ReaperResponse = Either ReaperPoisoned (Maybe ())
+
+-- | peek the next value from a TBQueue or timeout
+peekTBQueueTimeout :: Maybe Int
+                   -> HeartBeat
+                   -> PoisonFlask
+                   -> IO ReaperResponse
+peekTBQueueTimeout Nothing heartbeat fsk =
+    atomically $ Right . Just <$> peekTBQueue heartbeat <|>
+                 Left  . ReaperPoisoned <$> takeTMVar fsk
+peekTBQueueTimeout (Just timeoutAfter) heartbeat fsk = do
+  delay <- registerDelay timeoutAfter
+  atomically $ (Right . Just <$> peekTBQueue heartbeat) <|>
+               (pure (Right Nothing) <* untilTimeout delay) <|>
+               (Left . ReaperPoisoned <$> takeTMVar fsk)
+```
+
+------------------
+
+# Scaling down, STM to the rescue
+
+``` haskell
+reap :: Reaper -> IO ReaperResponse
+reap (Reaper t cond _ hb tgl pp) = do
+  r <- peekTBQueueTimeout t hb pp
+  case r of
+    Left _ -> return r -- If we have been poisoned, honour the poisoning and die.
+    v@(Right Nothing) -> do
+      condT <- cond
+      -- If the reaping condition is True, we need to die.
+      -- If not, we simulate a state toggle to induce listeners to unlock
+      -- and wait for the next batch of events.
+      if condT then return v else toggle tgl >> return (Right $ Just ())
+    Right s -> return . Right $ s
+```
+
+``` haskell
+instance Alternative STM where
+  empty = retry
+  (<|>) = orElse
+
+-- Compose two alternative STM actions (GHC only). If the first action completes
+-- without retrying then it forms the result of the orElse.
+-- Otherwise, if the first action retries, then the second action is tried in its place.
+-- If both actions retry then the orElse as a whole retries.
+```
+
+------------------
+
+# Scaling down, first results
+
+* •When we deployed the code, we didn't find a sensible difference in costs...
+* •... reason being Amazon doesn't bill you for fractional hours
+    + ~ Even if you spawn a machine 5 mins, you are billed the full hour!
+* •We needed workers to stay around as much as possible, maximising their
+    billing hour, without crossing the next-hour mark, if possible!
+
+------------------
+
+# RabbitMQ Consumer Priorities
+
+\center {\textit{
+"Consumer priorities allow you to ensure that high priority consumers receive messages
+while they are active, with messages only going to lower priority consumers when the
+high priority consumers block."
+}}
+
+------------------
+
+# RabbitMQ Consumer Priorities (cntd.)
+
+TODO: Show a chart to explain what Consumer priorities are and what
+we did to calculate this number.
+
+------------------
+
+# Putting everything together
+
+``` haskell
+newTranscoderState :: HeartBeat
+                   -> TranscoderType
+                   -> TranscoderCtx
+                   -> IO TranscoderState
+newTranscoderState hb ttype tctx = do
+  let config = tctx ^. tr_config
+  pp <- newPoisonFlask
+  rpr <- case ttype of
+    JobTranscoder (Production _) ->
+      newReaper pp hb (Just twoMinutes) closeToNextBillingHour (reapFromAWS config)
+    JobTranscoder Devel ->
+      newReaper pp hb (Just oneMinute) (return True) reapLocally
+    JobTranscoder _     ->
+      newReaper pp hb Nothing (return True) (return ())
+    AuxiliaryTranscoder ->
+      newReaper pp hb Nothing (return True) (return ())
+  return TranscoderState {
+           _ts_transitions = singleton 50 WaitingForJob
+         , _ts_poisonFlask = pp
+         , _ts_reaper = rpr
+         , _ts_ctx    = tctx
+         }
+```
+
+------------------
+
+# The new scaling algorithm: results
+
+\centerline{\includegraphics[scale=0.34]{images/ec2_costs_june.png}}
+
+------------------
+
+
+\centerline{\includegraphics[scale=0.34]{images/ec2_costs_sep.png}}
+
+\center{\textbf{
+We shaved almost 50\% of the costs!
+}}
 
 ------------------
 
