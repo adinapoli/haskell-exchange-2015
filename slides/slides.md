@@ -145,7 +145,7 @@ binary blobs over the queues. Can we avoid that?
 
 ------------------
 
-# Abstraction is the (media key)
+# Abstraction is the (media) key
 
 \note{
 Here I discuss the media key abstraction, aka an IP address for a video resource.
@@ -181,9 +181,15 @@ RabbitMQ, but it was the perfect fit for it!
 
 ------------------
 
+# The architecture
+
+\centerline{\includegraphics[scale=0.18]{images/hermes_architecture.png}}
+
+------------------
+
 # What about data storage?
 
-Fine, but RabbitMQ doesn't give you data persistence...
+Fine, but RabbitMQ doesn't give you data storage...
 
 1. We use AWS' S3 for our storing needs
    + ~ A media key **uniquely identifies** an S3 location (it's like
@@ -214,17 +220,11 @@ Easy concurrency and parallelism!
 Fine, but RabbitMQ doesn't give you scalability...
 
 1. We stood once again on the shoulder of giants - namely AWS' Auto Scaling Groups
-2. Our very first native scaling algorith looked like:
+2. Our very first naive scaling algorithm used AWS' builtin alarms and looked like:
     + ~ Scaling up: Based on CPU% over time
     + ~ Scaling down: Based on CPU% over time
 
 It kept us going for a while...
-
-------------------
-
-# The architecture
-
-\centerline{\includegraphics[scale=0.18]{images/hermes_architecture.png}}
 
 ------------------
 
@@ -233,7 +233,7 @@ It kept us going for a while...
 1. Scaling up was too conservative and slow
     + ~ It could take up to 15 mins to spawn a new worker
 2. Scaling down suffered similar problems
-3. The result was unoptimal customer experience (due to the
+3. The result was unoptimal for customers (due to the
 slow turnaround time) and unoptimal for us (due to the additional
 costs incurring from poor scaling down)
 
@@ -244,6 +244,9 @@ costs incurring from poor scaling down)
 * •Scaling up is easy: all we care about is the total number of
     jobs in RabbitMQ's **Ready** state;
     + ~ In RMQ jargon those are jobs waiting for a "transcoding slot"
+
+\centerline{\includegraphics[scale=0.5]{images/rabbit.png}}
+
 * •We periodically monitor those figures and kick off a "ScaleUP" action
     whenever `ready_jobs >= 0`
     + ~ AWS's ASG allows us to put an upper bound to the total number of
@@ -253,12 +256,12 @@ costs incurring from poor scaling down)
 
 # Scaling down
 
-* •More interesting is the scaling down. Ideally we want to kill a
-    worker if the following is true:
-    + ~ That worker didn't receive any new job for a `starvation_time` (say, 5 minutes)
-* •At the same time, we would like to opttimise the time the machines stays arounnd
-* •Last but not least, it needs to commit suicide alone, taking a
-    local decision, as it doesn't know its peers (SN architecture - remember?)
+1. More interesting is the scaling down. Ideally we want to kill a
+   worker if the following is true:
+    + ~ That worker didn't receive any new jobs within a  `starvation_time` period (say, 5 minutes)
+2. At the same time, we would like to optimise the time it stays around
+3. Last but not least, it needs to commit suicide alone (I know it sounds sad..), taking a
+   local decision, as it doesn't know its peers (SN architecture - remember?)
 
 ------------------
 
@@ -270,7 +273,7 @@ type Toggle = TMVar ()
 type PoisonFlask = TMVar ()
 
 data Reaper = Reaper {
-    _rr_timeout :: !(Maybe Int)
+    _rr_timeout :: Maybe Int
   -- ^ The timeout to use for this `Reaper`. Setting this to
   -- Nothing means no timeout at all. This is useful for those transcoders
   -- not associated with jobs (e.g. dual-view, discovery-kit, notifications,..)
@@ -278,11 +281,11 @@ data Reaper = Reaper {
   -- ^ If True, will trigger the reaping. If False, the Reaper will be
   -- permissive.
   , _rr_reapAction :: IO ()
-  , _rr_heartbeat :: !HeartBeat
-  , _rr_toggle :: !Toggle
+  , _rr_heartbeat :: HeartBeat
+  , _rr_toggle :: Toggle
   -- ^ When filled, inform the listeners they can carry on with their
   -- activities (i.e. fetch another job from the queue)
-  , _rr_poisonFlask :: !PoisonFlask
+  , _rr_poisonFlask :: PoisonFlask
   }
 ```
 
@@ -309,6 +312,12 @@ peekTBQueueTimeout (Just timeoutAfter) heartbeat fsk = do
                (Left . ReaperPoisoned <$> takeTMVar fsk)
 ```
 
+\note{
+In case someone asks why using `peek` and not doing the `read`,
+say that reason being the value will be read by transcoders job,
+in a sort of token-fashion.
+}
+
 ------------------
 
 # Scaling down, STM to the rescue
@@ -333,11 +342,47 @@ instance Alternative STM where
   empty = retry
   (<|>) = orElse
 
--- Compose two alternative STM actions (GHC only). If the first action completes
+-- orElse: Compose two alternative STM actions. If the first action completes
 -- without retrying then it forms the result of the orElse.
--- Otherwise, if the first action retries, then the second action is tried in its place.
--- If both actions retry then the orElse as a whole retries.
+-- Otherwise, if the first action retries, then the second action is tried
+-- in its place. If both actions retry then the orElse as a whole retries.
 ```
+
+------------------
+
+# Scaling down, a typical Transcoder
+
+```haskell
+newtype Transcoder a = Transcoder { transcode :: StateT TranscoderState IO a }
+  deriving (MonadState TranscoderState, Monad, Functor, Applicative, MonadIO)
+```
+
+```haskell
+transcoder :: Transcoder ()
+transcoder = do
+  ctx@TranscoderCtx{..} <- getContext
+  newTranscoder $ \_ hb tgl -> NewRabbitConsumer <$> do
+    consumeTranscodingJobsIO _tr_channelConfig $ \(msg, env) -> void $ forkIO $
+      withIncomingPacket msg $
+      \job@(PendingJob key HermesOptions{..} _ (RetryWindow _ _)) -> do
+        sendHeartBeat hb -- puts a 'token' into the heartbeat queue
+        -- Do here transcoding stuff...
+        signalDone hb -- reads from the heartbeat queue
+        toggle tgl    -- puts a token (unit) inside the toggle
+```
+
+```haskell
+newTranscoder :: (PoisonFlask -> HeartBeat -> Toggle -> IO NonBlockingAction)
+              -> Transcoder ()
+```
+
+The purpose of that `NonBlockingAction` type will be clear soon.
+
+\note{
+Also say that due to the fact transcoders are just a State monad in disguise,
+we can have different transcoders, with different behaviours, listening on
+different queues.
+}
 
 ------------------
 
@@ -363,8 +408,33 @@ high priority consumers block."
 
 # RabbitMQ Consumer Priorities (cntd.)
 
-TODO: Show a chart to explain what Consumer priorities are and what
-we did to calculate this number.
+\centerline{\includegraphics[scale=0.8]{images/consumer_priorities.png}}
+
+* •Each worker can transcode 1 job at time, before "blocking"
+
+* •The priority is set to be `60 - (uptime % 60)`
+
+* •A newly spawned machine gets max priority
+
+* •A machine close enough to the next billing hours (e.g. priority <= 10)
+  **if starving**, gets evicted!
+
+------------------
+
+# RabbitMQ Consumer Priorities (cntd.)
+
+* •A consumer priority cannot be updated dynamically
+
+* •The easiest way we found was - after a successful heartbeat - to simply cancel the old consumer
+  and create a new one, with updated priority
+
+``` haskell
+data NonBlockingAction = VoidAction ()
+                       | NewRabbitConsumer ConsumerTag
+```
+
+* •We used the `ConsumerTag` returned by `NewRabbitConsumer` to cancel
+  the old one, compute the updated priority and start a new transcoder
 
 ------------------
 
@@ -402,7 +472,6 @@ newTranscoderState hb ttype tctx = do
 \centerline{\includegraphics[scale=0.34]{images/ec2_costs_june.png}}
 
 ------------------
-
 
 \centerline{\includegraphics[scale=0.34]{images/ec2_costs_sep.png}}
 
@@ -462,5 +531,3 @@ Questions?
 
 * **My road to Haskell**
   http://www.alfredodinapoli.com/posts/2014-04-27-my-road-to-haskell.html
-* **Don Stewart - Haskell in the large**
-  http://code.haskell.org/~dons/talks/dons-google-2015-01-27.pdf
