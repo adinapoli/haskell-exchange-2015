@@ -56,7 +56,7 @@ that other teachers (when invited) can watch and comment on.
 
 \note {
 In this quite barebone diagram you can see at glance the components
-of our system. At IRIS we have this recurring theme of greek gods &
+of our system. At IRIS we have this recurring theme of Greek gods &
 titans, so we maintained the tradition upon creating more services.
 We operate using AWS and its services, most notably EC2 & S3.
 In the latter we store all our videos & customer data.
@@ -81,7 +81,7 @@ Today I will be telling you the story of Hermes.
 # Hermes' challenges
 
 Upon taking the lead on Hermes, I was asked for a couple of
-requirements to be fullfilled, the most important one being that
+requirements to be fulfilled, the most important one being that
 the system needed to be deployed in a cluster, capable of scaling
 according to demand.
 
@@ -220,7 +220,7 @@ Easy concurrency and parallelism!
 Fine, but RabbitMQ doesn't give you scalability...
 
 1. We stood once again on the shoulder of giants - namely AWS' Auto Scaling Groups
-2. Our very first naive scaling algorithm used AWS' builtin alarms and looked like:
+2. Our very first naive scaling algorithm used AWS' built-in alarms and looked like:
     + ~ Scaling up: Based on CPU% over time
     + ~ Scaling down: Based on CPU% over time
 
