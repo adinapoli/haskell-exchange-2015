@@ -233,8 +233,8 @@ It kept us going for a while...
 1. Scaling up was too conservative and slow
     + ~ It could take up to 15 mins to spawn a new worker
 2. Scaling down suffered similar problems
-3. The result was unoptimal for customers (due to the
-slow turnaround time) and unoptimal for us (due to the additional
+3. The result was suboptimal for customers (due to the
+slow turnaround time) and suboptimal for us (due to the additional
 costs incurring from poor scaling down)
 
 ------------------
