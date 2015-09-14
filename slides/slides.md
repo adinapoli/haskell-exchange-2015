@@ -256,7 +256,7 @@ costs incurring from poor scaling down)
 
 # Scaling down
 
-1. More interesting is the scaling down. Ideally we want to kill a
+1. More interesting is scaling down. Ideally we want to kill a
    worker if the following is true:
     + ~ That worker didn't receive any new jobs within a  `starvation_time` period (say, 5 minutes)
 2. At the same time, we would like to optimise the time it stays around
