@@ -44,7 +44,7 @@ a link to the next slide.
 \note {
 I have mentioned the word reflection, and not by chance. A
 reflection is a single feedback unit which can be formed by
-one of more videos, which are uploaded by the teachers and
+one of more videos, which are uploaded by teachers and
 that other teachers (when invited) can watch and comment on.
 }
 
