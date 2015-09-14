@@ -176,7 +176,7 @@ video products -----------------------------------------+        |
 MAC (avoids submission of bogus keys) ---------------------------+
 ```
 
-To be fair, the media key abstraction was already present in Atlas when I choose
+To be fair, the media key abstraction was already present in Atlas when I chose
 RabbitMQ, but it was the perfect fit for it!
 
 ------------------
