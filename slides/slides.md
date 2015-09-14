@@ -55,7 +55,7 @@ that other teachers (when invited) can watch and comment on.
 # IRIS' Greek Zoo
 
 \note {
-In this quite barebone diagram you can see at glance the components
+In this quite barebone diagram you can see at a glance the components
 of our system. At IRIS we have this recurring theme of Greek gods &
 titans, so we maintained the tradition upon creating more services.
 We operate using AWS and its services, most notably EC2 & S3.
