@@ -82,8 +82,7 @@ Today I will be telling you the story of Hermes.
 
 Upon taking the lead on Hermes, I was asked for a couple of
 requirements to be fullfilled, the most important one being that
-the system needed to be deployed in a cluster, capable of scaling
-according to demand.
+the system needed to be capable of scaling according to demand.
 
 ------------------
 
@@ -101,8 +100,8 @@ More specifically, we wanted a system with these desirable properties:
 
 # All I want is a cluster
 
-* ~ It's easy to see that what we want is a **cluster**, capable of scaling on
-  demand
+* ~ It's easy to see that what we want is a **cluster**, which should ramp up
+  during busiest times in the day and cooldown during night hours
 * ~ We need to transcode videos, which is a very stateful operation
 * ~ A cluster typically implies machines talking to each other, which is
   also very stateful
