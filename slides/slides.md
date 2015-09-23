@@ -292,35 +292,6 @@ data Reaper = Reaper {
 
 # Scaling down - Reaper timeout
 
-```
-data ReaperPoisoned = ReaperPoisoned ()
-type ReaperResponse = Either ReaperPoisoned (Maybe ())
-
--- | peek the next value from a TBQueue or timeout
-peekTBQueueTimeout :: Maybe Int
-                   -> HeartBeat
-                   -> PoisonFlask
-                   -> IO ReaperResponse
-peekTBQueueTimeout Nothing heartbeat fsk =
-    atomically $ Right . Just <$> peekTBQueue heartbeat <|>
-                 Left  . ReaperPoisoned <$> takeTMVar fsk
-peekTBQueueTimeout (Just timeoutAfter) heartbeat fsk = do
-  delay <- registerDelay timeoutAfter
-  atomically $ (Right . Just <$> peekTBQueue heartbeat) <|>
-               (pure (Right Nothing) <* untilTimeout delay) <|>
-               (Left . ReaperPoisoned <$> takeTMVar fsk)
-```
-
-\note{
-In case someone asks why using `peek` and not doing the `read`,
-say that reason being the value will be read by transcoders job,
-in a sort of token-fashion.
-}
-
-------------------
-
-# Scaling down, STM to the rescue
-
 ``` haskell
 reap :: Reaper -> IO ReaperResponse
 reap (Reaper t cond _ hb tgl pp) = do
@@ -334,6 +305,32 @@ reap (Reaper t cond _ hb tgl pp) = do
       -- and wait for the next batch of events.
       if condT then return v else toggle tgl >> return (Right $ Just ())
     Right s -> return . Right $ s
+```
+
+\note{
+In case someone asks why using `peek` and not doing the `read`,
+say that reason being the value will be read by transcoders job,
+in a sort of token-fashion.
+}
+
+------------------
+
+# Scaling down, STM to the rescue
+
+```
+data ReaperPoisoned = ReaperPoisoned ()
+type ReaperResponse = Either ReaperPoisoned (Maybe ())
+
+-- | peek the next value from a TBQueue or timeout
+peekTBQueueTimeout :: Maybe Int -> HeartBeat -> PoisonFlask -> IO ReaperResponse
+peekTBQueueTimeout Nothing heartbeat fsk =
+    atomically $ Right . Just <$> peekTBQueue heartbeat <|>
+                 Left  . ReaperPoisoned <$> takeTMVar fsk
+peekTBQueueTimeout (Just timeoutAfter) heartbeat fsk = do
+  delay <- registerDelay timeoutAfter
+  atomically $ (Right . Just <$> peekTBQueue heartbeat) <|>
+               (pure (Right Nothing) <* untilTimeout delay) <|>
+               (Left . ReaperPoisoned <$> takeTMVar fsk)
 ```
 
 ``` haskell
@@ -359,15 +356,15 @@ newtype Transcoder a = Transcoder { transcode :: StateT TranscoderState IO a }
 ```haskell
 transcoder :: Transcoder ()
 transcoder = do
-  ctx@TranscoderCtx{..} <- getContext
   newTranscoder $ \_ hb tgl -> NewRabbitConsumer <$> do
-    consumeTranscodingJobsIO _tr_channelConfig $ \(msg, env) -> void $ forkIO $
-      withIncomingPacket msg $
-      \job@(PendingJob key HermesOptions{..} _ (RetryWindow _ _)) -> do
-        sendHeartBeat hb -- puts a 'token' into the heartbeat queue
+    consumeTranscodingJobsIO $ \(msg, env) -> void $ forkIO $
+      \job -> do
+        sendHeartBeat hb
+        --
         -- Do here transcoding stuff...
-        signalDone hb -- reads from the heartbeat queue
-        toggle tgl    -- puts a token (unit) inside the toggle
+        --
+        signalDone hb
+        toggle tgl
 ```
 
 ```haskell
@@ -409,9 +406,15 @@ high priority consumers block."
 
 \centerline{\includegraphics[scale=0.8]{images/consumer_priorities.png}}
 
+------------------
+
 * •Each worker can transcode 1 job at time, before "blocking"
 
-* •The priority is set to be `60 - (uptime % 60)`
+* •The priority is set to be :
+
+\center{ \textbf{\large {
+60 - (uptime \% 60)
+}}}
 
 * •A newly spawned machine gets max priority
 
@@ -477,6 +480,12 @@ newTranscoderState hb ttype tctx = do
 \center{\textbf{
 We shaved almost 50\% of the costs!
 }}
+
+------------------
+
+# The new scaling down in action
+
+\centerline{\includegraphics[scale=0.34]{images/cluster_size.png}}
 
 ------------------
 
