@@ -52,7 +52,7 @@ that other teachers (when invited) can watch and comment on.
 
 ------------------
 
-# IRIS' Greek Zoo
+# IRIS' Greek Pantheon
 
 \note {
 In this quite barebone diagram you can see at glance the components
@@ -511,15 +511,15 @@ Discuss why we do have not used CH.
 
 # Why not Cloud Haskell
 
-1. CH encourages Erlang-style (i.e. actor based) communication, so nodes
-should know each other
- - We do not want that!
+1. It wasn't mature enough in 2013, if not for a handful of companies
+using it
+
 2. Peer discovery would have been tricky in a dynamic environment where
 new machines born and die frequently
 
-3. It wasn't mature enough in 2013, if not for a handful of companies
-using it
-
+3. CH encourages Erlang-style (i.e. actor based) communication, so nodes
+should know each other
+ - ~ We do not want that!
 
 ------------------
 
