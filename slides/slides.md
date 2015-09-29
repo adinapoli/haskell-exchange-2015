@@ -32,10 +32,12 @@ a link to the next slide.
 
 \centerline{\includegraphics[scale=0.2]{images/iris_logo.png}}
 
-- ~ Present in over 1800 schools Worldwide
+- •Present in over 1800 schools Worldwide
   (mostly UK, Europe, US & Australia)
 
-- ~ Used by over 32000 teachers
+- •Used by over 32000 teachers
+
+- •~ 100GB upload of daily new content
 
 ------------------
 
